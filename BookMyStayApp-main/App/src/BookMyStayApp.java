@@ -1,7 +1,6 @@
 // Version: 6.1 (refactored)
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -34,18 +33,21 @@ abstract class Room {
 
 class SingleRoom extends Room {
     public SingleRoom() { super(1, 250, 1500.0); }
+
     @Override
     public String getRoomType() { return "Single Room"; }
 }
 
 class DoubleRoom extends Room {
     public DoubleRoom() { super(2, 400, 2500.0); }
+
     @Override
     public String getRoomType() { return "Double Room"; }
 }
 
 class SuiteRoom extends Room {
     public SuiteRoom() { super(3, 750, 5000.0); }
+
     @Override
     public String getRoomType() { return "Suite Room"; }
 }
@@ -60,9 +62,9 @@ class RoomInventory {
     }
 
     private void initializeInventory() {
-        roomAvailability.put("Single", 5);
-        roomAvailability.put("Double", 3);
-        roomAvailability.put("Suite", 2);
+        roomAvailability.put("Single Room", 5);
+        roomAvailability.put("Double Room", 3);
+        roomAvailability.put("Suite Room", 2);
     }
 
     public Map<String, Integer> getRoomAvailability() { return roomAvailability; }
@@ -74,35 +76,47 @@ class RoomInventory {
 
 // Version: 4.0
 class RoomSearchService {
-    public void searchAvailableRooms(RoomInventory inventory,
-                                     Room singleRoom, Room doubleRoom, Room suiteRoom) {
+    public void searchAvailableRooms(
+            RoomInventory inventory,
+            Room singleRoom,
+            Room doubleRoom,
+            Room suiteRoom) {
+
         Map<String, Integer> availability = inventory.getRoomAvailability();
-        System.out.println("Available Rooms:");
         boolean anyAvailable = false;
-        if (availability.get("Single") > 0) {
+
+        System.out.println("Available Rooms:");
+        System.out.println();
+
+        if (availability.get("Single Room") > 0) {
             singleRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Single"));
+            System.out.println("Available: " + availability.get("Single Room"));
             anyAvailable = true;
         }
-        if (availability.get("Double") > 0) {
+        if (availability.get("Double Room") > 0) {
             if (anyAvailable) System.out.println();
             doubleRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Double"));
+            System.out.println("Available: " + availability.get("Double Room"));
             anyAvailable = true;
         }
-        if (availability.get("Suite") > 0) {
+        if (availability.get("Suite Room") > 0) {
             if (anyAvailable) System.out.println();
             suiteRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Suite"));
+            System.out.println("Available: " + availability.get("Suite Room"));
             anyAvailable = true;
         }
-        if (!anyAvailable) System.out.println("No rooms currently available.");
+
+        if (!anyAvailable) {
+            System.out.println("No rooms currently available.");
+        }
     }
 }
 
 // Version: 5.0
 class Reservation {
+    /** Name of the guest making the booking. */
     private String guestName;
+    /** Requested room type. */
     private String roomType;
 
     public Reservation(String guestName, String roomType) {
@@ -110,14 +124,17 @@ class Reservation {
         this.roomType = roomType;
     }
 
+    /** @return guest name */
     public String getGuestName() { return guestName; }
     public String getRoomType() { return roomType; }
 }
 
 // Version: 5.0
 class BookingRequestQueue {
+    /** Queue that stores booking requests. */
     private Queue<Reservation> requestQueue;
 
+    /** Initializes an empty booking queue. */
     public BookingRequestQueue() { requestQueue = new LinkedList<>(); }
 
     public void addRequest(Reservation reservation) { requestQueue.offer(reservation); }
