@@ -2,14 +2,10 @@
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.Stack;
 
 abstract class Room {
     private int numberOfBeds;
@@ -38,18 +34,21 @@ abstract class Room {
 
 class SingleRoom extends Room {
     public SingleRoom() { super(1, 250, 1500.0); }
+
     @Override
     public String getRoomType() { return "Single Room"; }
 }
 
 class DoubleRoom extends Room {
     public DoubleRoom() { super(2, 400, 2500.0); }
+
     @Override
     public String getRoomType() { return "Double Room"; }
 }
 
 class SuiteRoom extends Room {
     public SuiteRoom() { super(3, 750, 5000.0); }
+
     @Override
     public String getRoomType() { return "Suite Room"; }
 }
@@ -64,9 +63,9 @@ class RoomInventory {
     }
 
     private void initializeInventory() {
-        roomAvailability.put("Single", 5);
-        roomAvailability.put("Double", 3);
-        roomAvailability.put("Suite", 2);
+        roomAvailability.put("Single Room", 5);
+        roomAvailability.put("Double Room", 3);
+        roomAvailability.put("Suite Room", 2);
     }
 
     public Map<String, Integer> getRoomAvailability() { return roomAvailability; }
@@ -78,66 +77,65 @@ class RoomInventory {
 
 // Version: 4.0
 class RoomSearchService {
-    public void searchAvailableRooms(RoomInventory inventory,
-                                     Room singleRoom, Room doubleRoom, Room suiteRoom) {
+    public void searchAvailableRooms(
+            RoomInventory inventory,
+            Room singleRoom,
+            Room doubleRoom,
+            Room suiteRoom) {
+
         Map<String, Integer> availability = inventory.getRoomAvailability();
-        System.out.println("Available Rooms:");
         boolean anyAvailable = false;
-        if (availability.get("Single") > 0) {
+
+        System.out.println("Available Rooms:");
+        System.out.println();
+
+        if (availability.get("Single Room") > 0) {
             singleRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Single"));
+            System.out.println("Available: " + availability.get("Single Room"));
             anyAvailable = true;
         }
-        if (availability.get("Double") > 0) {
+        if (availability.get("Double Room") > 0) {
             if (anyAvailable) System.out.println();
             doubleRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Double"));
+            System.out.println("Available: " + availability.get("Double Room"));
             anyAvailable = true;
         }
-        if (availability.get("Suite") > 0) {
+        if (availability.get("Suite Room") > 0) {
             if (anyAvailable) System.out.println();
             suiteRoom.displayDetails();
-            System.out.println("Available: " + availability.get("Suite"));
+            System.out.println("Available: " + availability.get("Suite Room"));
             anyAvailable = true;
         }
-        if (!anyAvailable) System.out.println("No rooms currently available.");
+
+        if (!anyAvailable) {
+            System.out.println("No rooms currently available.");
+        }
     }
 }
 
-// Version: 8.0 — roomId added to carry the assigned room ID into booking history
-// without changing the two-arg constructor used throughout the queue flow.
+// Version: 5.0
 class Reservation {
+    /** Name of the guest making the booking. */
     private String guestName;
+    /** Requested room type. */
     private String roomType;
-
-    /**
-     * Assigned room ID, populated by RoomAllocationService after a
-     * successful allocation. Null until the booking is confirmed.
-     */
-    private String roomId;
 
     public Reservation(String guestName, String roomType) {
         this.guestName = guestName;
         this.roomType = roomType;
     }
 
+    /** @return guest name */
     public String getGuestName() { return guestName; }
-    public String getRoomType()  { return roomType;  }
-    public String getRoomId()    { return roomId;    }
-
-    /**
-     * Called by RoomAllocationService once a room ID is generated.
-     * Keeps allocation concerns out of the Reservation constructor.
-     *
-     * @param roomId assigned room ID (e.g. "Single-1")
-     */
-    public void setRoomId(String roomId) { this.roomId = roomId; }
+    public String getRoomType() { return roomType; }
 }
 
 // Version: 5.0
 class BookingRequestQueue {
+    /** Queue that stores booking requests. */
     private Queue<Reservation> requestQueue;
 
+    /** Initializes an empty booking queue. */
     public BookingRequestQueue() { requestQueue = new LinkedList<>(); }
 
     public void addRequest(Reservation reservation) { requestQueue.offer(reservation); }
@@ -147,8 +145,7 @@ class BookingRequestQueue {
     public boolean hasPendingRequests() { return !requestQueue.isEmpty(); }
 }
 
-// Version: 6.1 — allocateRoom now returns the assigned room ID so callers
-// can use it (e.g. for add-on service mapping) without exposing internal state.
+// Version: 6.0
 class RoomAllocationService {
     /**
      * Stores all allocated room IDs to prevent duplicate assignments.
@@ -169,12 +166,10 @@ class RoomAllocationService {
 
     /**
      * Confirms a booking request by assigning a unique room ID and updating inventory.
-     *
      * @param reservation booking request
      * @param inventory   centralized room inventory
-     * @return assigned room ID, or null if allocation failed
      */
-    public String allocateRoom(Reservation reservation, RoomInventory inventory) {
+    public void allocateRoom(Reservation reservation, RoomInventory inventory) {
         String roomType = reservation.getRoomType();
         Map<String, Integer> availability = inventory.getRoomAvailability();
 
@@ -182,7 +177,7 @@ class RoomAllocationService {
         if (available <= 0) {
             System.out.println("Booking failed for Guest: " + reservation.getGuestName()
                     + " - No availability for " + roomType);
-            return null;
+            return;
         }
 
         String roomId = generateRoomId(roomType);
@@ -192,19 +187,12 @@ class RoomAllocationService {
 
         inventory.updateAvailability(roomType, available - 1);
 
-        // Stamp the assigned ID onto the reservation so it travels into
-        // BookingHistory as a self-contained, fully-described record.
-        reservation.setRoomId(roomId);
-
         System.out.println("Booking confirmed for Guest: " + reservation.getGuestName()
                 + ", Room ID: " + roomId);
-
-        return roomId;
     }
 
     /**
      * Generates a unique room ID for the given room type.
-     *
      * @param roomType type of room
      * @return unique room ID
      */
@@ -623,30 +611,25 @@ class ConcurrentBookingProcessor implements Runnable {
 
 public class BookMyStayApp {
     public static void main(String[] args) {
-
-        // ── Use Case 6: Room Allocation Processing ──────────────────────────
         System.out.println("Room Allocation Processing");
 
         RoomInventory inventory = new RoomInventory();
         BookingRequestQueue bookingQueue = new BookingRequestQueue();
         RoomAllocationService allocationService = new RoomAllocationService();
         BookingHistory bookingHistory = new BookingHistory();
-        CancellationService cancellationService = new CancellationService();
 
         bookingQueue.addRequest(new Reservation("Abhi", "Single"));
-        bookingQueue.addRequest(new Reservation("Subha", "Double"));
+        bookingQueue.addRequest(new Reservation("Subha", "Single"));
         bookingQueue.addRequest(new Reservation("Vanmathi", "Suite"));
 
         // Capture the room ID for "Abhi" so it can be used in Use Case 7.
-        // Successful allocations are recorded in booking history (UC8) and
-        // registered with CancellationService (UC10) in the same pass.
+        // Successful allocations are also recorded in booking history for Use Case 8.
         String abhiRoomId = null;
         while (bookingQueue.hasPendingRequests()) {
             Reservation next = bookingQueue.getNextRequest();
             String assignedId = allocationService.allocateRoom(next, inventory);
             if (assignedId != null) {
                 bookingHistory.addReservation(next);
-                cancellationService.registerBooking(assignedId, next.getRoomType());
                 if ("Abhi".equals(next.getGuestName())) {
                     abhiRoomId = assignedId;
                 }
